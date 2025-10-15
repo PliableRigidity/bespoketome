@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Three.js Minimal</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+      canvas { display: block; }
+      #debug {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="debug">Loading Three.js...</div>
+    
+    <!-- Try both methods -->
+    <script>
+      // Method 1: Try with CDN script tag (no module needed)
+      function loadThreeJSWithScript() {
+        console.log("Trying script tag method...");
+        
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/three@0.152.2/build/three.min.js';
+        script.onload = function() {
+          console.log("Three.js loaded via script tag:", THREE);
+          initThreeJS();
+        };
+        script.onerror = function() {
+          console.error("Failed to load Three.js via script tag");
+          document.getElementById('debug').innerHTML = "Failed to load Three.js";
+        };
+        document.head.appendChild(script);
+      }
+      
+      function loadOrbitControls(canvas, camera, sphere, scene, renderer, debugDiv) {
+        // Try multiple CDN sources for OrbitControls
+        const cdnUrls = [
+          'https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js',
+          'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js',
+          'https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js'
+        ];
+        
+        let currentUrlIndex = 0;
+        
+        function tryLoadControls() {
+          if (currentUrlIndex >= cdnUrls.length) {
+            console.log("All CDN sources failed, using manual controls");
+            setupManualControls(canvas, camera, sphere, scene, renderer, debugDiv);
+            return;
+          }
+          
+          const controlsScript = document.createElement('script');
+          controlsScript.src = cdnUrls[currentUrlIndex];
+          
+          controlsScript.onload = function() {
+            console.log("OrbitControls loaded from:", cdnUrls[currentUrlIndex]);
+            
+            try {
+              // Create controls
+              const controls = new THREE.OrbitControls(camera, canvas);
+              controls.enableDamping = true;
+              controls.dampingFactor = 0.05;
+              controls.enableZoom = true;
+              controls.enablePan = true;
+              
+              console.log("OrbitControls created:", controls);
+              
+              // Animation loop with controls
+              function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                
+                // No auto-rotation - user has full control
+                
+                renderer.render(scene, camera);
+              }
+              
+              debugDiv.innerHTML = "✓ OrbitControls active! Click and drag to rotate, scroll to zoom.";
+              animate();
+              
+            } catch (error) {
+              console.error("Error creating OrbitControls:", error);
+              currentUrlIndex++;
+              tryLoadControls();
+            }
+          };
+          
+          controlsScript.onerror = function() {
+            console.error("Failed to load OrbitControls from:", cdnUrls[currentUrlIndex]);
+            currentUrlIndex++;
+            tryLoadControls();
+          };
+          
+          document.head.appendChild(controlsScript);
+        }
+        
+        tryLoadControls();
+      }
+      
+      function setupManualControls(canvas, camera, sphere, scene, renderer, debugDiv) {
+        console.log("Setting up manual mouse controls");
+        
+        let isMouseDown = false;
+        let mouseX = 0, mouseY = 0;
+        let cameraRadius = 5;
+        let cameraAngleX = 0, cameraAngleY = 0;
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', function(event) {
+          isMouseDown = true;
+          mouseX = event.clientX;
+          mouseY = event.clientY;
+          canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mouseup', function(event) {
+          isMouseDown = false;
+          canvas.style.cursor = 'grab';
+        });
+        
+        canvas.addEventListener('mousemove', function(event) {
+          if (!isMouseDown) return;
+          
+          const deltaX = event.clientX - mouseX;
+          const deltaY = event.clientY - mouseY;
+          
+          cameraAngleY += deltaX * 0.01;
+          cameraAngleX += deltaY * 0.01;
+          
+          // Limit vertical rotation
+          cameraAngleX = Math.max(-Math.PI/2, Math.min(Math.PI/2, cameraAngleX));
+          
+          updateCameraPosition();
+          
+          mouseX = event.clientX;
+          mouseY = event.clientY;
+        });
+        
+        canvas.addEventListener('wheel', function(event) {
+          cameraRadius += event.deltaY * 0.01;
+          cameraRadius = Math.max(2, Math.min(20, cameraRadius));
+          updateCameraPosition();
+        });
+        
+        canvas.style.cursor = 'grab';
+        
+        function updateCameraPosition() {
+          camera.position.x = cameraRadius * Math.cos(cameraAngleX) * Math.sin(cameraAngleY);
+          camera.position.y = cameraRadius * Math.sin(cameraAngleX);
+          camera.position.z = cameraRadius * Math.cos(cameraAngleX) * Math.cos(cameraAngleY);
+          camera.lookAt(0, 0, 0);
+        }
+        
+        // Animation loop
+        function animate() {
+          requestAnimationFrame(animate);
+          
+          // No auto-rotation - user has full control
+          
+          renderer.render(scene, camera);
+        }
+        
+        debugDiv.innerHTML = "✓ Manual controls active! Click and drag to rotate, scroll to zoom.";
+        animate();
+      }
+      
+      function initThreeJS() {
+        try {
+          const debugDiv = document.getElementById('debug');
+          debugDiv.innerHTML = "Three.js loaded! Creating scene...";
+          
+          // Create scene
+          const scene = new THREE.Scene();
+          console.log("Scene created:", scene);
+          
+          // Create camera
+          const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+          camera.position.z = 5;
+          console.log("Camera created:", camera);
+          
+          // Create renderer
+          const renderer = new THREE.WebGLRenderer({ antialias: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setClearColor(0x222222);
+          document.body.appendChild(renderer.domElement);
+          console.log("Renderer created and canvas added");
+          
+          // Create data sphere with particles (the working version)
+          console.log("Creating particle sphere...");
+          
+          const particleCount = 10000;
+          const sphereRadius = 2.54;
+          
+          // Create particle positions, colors, and sizes
+          const positions = new Float32Array(particleCount * 3);
+          const colors = new Float32Array(particleCount * 3);
+          const sizes = new Float32Array(particleCount);
+          
+          // Generate random data points on sphere surface
+          for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            
+            // Generate random position on sphere surface
+            const theta = Math.random() * Math.PI * 2; // Azimuth angle
+            const phi = Math.acos(2 * Math.random() - 1); // Polar angle
+            
+            // Convert spherical to cartesian coordinates
+            positions[i3] = sphereRadius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = sphereRadius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = sphereRadius * Math.cos(phi);
+            
+            // Create data-based colors (simulate different data categories)
+            const dataValue = Math.random(); // Simulated data value
+            const color = new THREE.Color();
+            
+            // Color mapping based on data value
+            if (dataValue < 0.33) {
+              color.setHSL(0.6, 0.8, 0.7); // Blue for low values
+            } else if (dataValue < 0.66) {
+              color.setHSL(0.3, 0.8, 0.7); // Green for medium values
+            } else {
+              color.setHSL(0.0, 0.8, 0.7); // Red for high values
+            }
+            
+            colors[i3] = color.r;
+            colors[i3 + 1] = color.g;
+            colors[i3 + 2] = color.b;
+            
+            // Size based on data importance/strength
+            sizes[i] = 0.02 + dataValue * 0.08; // Random size between 0.02 and 0.1
+          }
+          
+          // Create particle geometry
+          const particleGeometry = new THREE.BufferGeometry();
+          particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+          particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+          
+          // Create circular particle texture
+          const canvas = document.createElement('canvas');
+          canvas.width = 64;
+          canvas.height = 64;
+          const context = canvas.getContext('2d');
+          
+          // Create gradient for smooth circular particle
+          const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+          gradient.addColorStop(0, 'rgba(255,255,255,1)');
+          gradient.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+          gradient.addColorStop(1, 'rgba(255,255,255,0)');
+          
+          // Draw circular particle
+          context.fillStyle = gradient;
+          context.fillRect(0, 0, 64, 64);
+          
+          // Create texture from canvas
+          const particleTexture = new THREE.CanvasTexture(canvas);
+          
+          // Create particle material with circular texture
+          const particleMaterial = new THREE.PointsMaterial({
+            size: 0.05,
+            sizeAttenuation: true,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending, // Creates glowing effect
+            map: particleTexture // Use circular texture
+          });
+          
+          // Create particle system
+          const sphere = new THREE.Points(particleGeometry, particleMaterial);
+          scene.add(sphere);
+          
+          console.log(`Particle sphere created with ${particleCount} particles`);
+          console.log("Sphere object:", sphere);
+          
+          // Load OrbitControls for mouse interaction
+          loadOrbitControls(renderer.domElement, camera, sphere, scene, renderer, debugDiv);
+          
+        } catch (error) {
+          console.error("Error in Three.js setup:", error);
+          document.getElementById('debug').innerHTML = "Error: " + error.message;
+        }
+      }
+      
+      // Try the script tag method first
+      loadThreeJSWithScript();
+    </script>
+    
+    <!-- Fallback: Original module method -->
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
