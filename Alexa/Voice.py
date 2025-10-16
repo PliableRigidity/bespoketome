@@ -56,8 +56,8 @@ MODEL = r"C:\Piper\models\en-us-ryan-high.onnx"   # change path/voice as needed
 OUT_WAV = "tts_output.wav"
 
 # 2) Convert text -> WAV
-voice = PiperVoice.load(MODEL)
+voice = PiperVoice.load(MODEL, use_cuda=True)
 text = resp['response']
-voice.speak(text, output_file=OUT_WAV)
+voice.synthesize_wav(text, output_file=OUT_WAV)
 
 print(f"Saved: {OUT_WAV}")
