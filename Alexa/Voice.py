@@ -31,43 +31,33 @@ from piper import PiperVoice
 
 ## Transcribe with Faster Whisper
 
-# model_size = "large-v3"       # requires a strong GPU; for lighter try "medium" or "small"
-# model = WhisperModel(model_size, device="cuda", compute_type="float16")
-# segments, info = model.transcribe("output.wav", beam_size=5, vad_filter=True)
+model_size = "large-v3"       # requires a strong GPU; for lighter try "medium" or "small"
+model = WhisperModel(model_size, device="cuda", compute_type="float16")
+segments, info = model.transcribe("output.wav", beam_size=5, vad_filter=True)
 
-# # segments is a generator; consume once and join
-# segments_list = list(segments)
-# final_text = "".join(seg.text for seg in segments_list).strip()
+# segments is a generator; consume once and join
+segments_list = list(segments)
+final_text = "".join(seg.text for seg in segments_list).strip()
 
-# print(f"Detected language '{info.language}' (p={info.language_probability:.3f})")
-# print("\n--- FINAL TRANSCRIPT ---\n")
-# print(final_text)
+print(f"Detected language '{info.language}' (p={info.language_probability:.3f})")
+print("\n--- FINAL TRANSCRIPT ---\n")
+print(final_text)
 
-# ## Generate response with Ollama
+## Generate response with Ollama
 
-# client = Client(host='http://127.0.0.1:11434')  # or 'http://localhost:11434'
+client = Client(host='http://127.0.0.1:11434')  # or 'http://localhost:11434'
 
-# resp = client.generate(model='llama3.2:latest', prompt=final_text)
-# print(resp['response'])
+resp = client.generate(model='llama3.2:latest', prompt=final_text)
+print(resp['response'])
 
-# ## Synthesize speech with Piper
+## Synthesize speech with Piper
 
-# MODEL = r"C:\Piper\models\en-us-ryan-high.onnx"   # change path/voice as needed
-# OUT_WAV = "tts_output.wav"
+MODEL = r"C:\Piper\models\en-us-ryan-high.onnx"   # change path/voice as needed
+OUT_WAV = "tts_output.wav"
 
-# # 2) Convert text -> WAV
-# voice = PiperVoice.load(MODEL, use_cuda=True)
-# text = resp['response']
-# voice.synthesize_wav(text, output_file=OUT_WAV)
+# 2) Convert text -> WAV
+voice = PiperVoice.load(MODEL, use_cuda=True)
+text = resp['response']
+voice.synthesize_wav(text, output_file=OUT_WAV)
 
-# print(f"Saved: {OUT_WAV}")
-
-import pprint
-
-from langchain_community.utilities import SearxSearchWrapper
-search = SearxSearchWrapper(
-    searx_host="http://127.0.0.1:8888",
-    k=5,
-    headers={"User-Agent": "Mozilla/5.0"})
-results = search.run("What is the capital of France?")
-pprint.pprint(results)
+print(f"Saved: {OUT_WAV}")
