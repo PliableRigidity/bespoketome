@@ -4,7 +4,7 @@ from tools_time import get_time, get_time_in
 from tool_weather import get_weather
 
 def _fmt_time_result(res: dict) -> str:
-    if "place" in res:
+    if res.get("place"):
         return f"In {res['place']}, the time is {res['human']}."
     return f"The time is {res['human']}."
 

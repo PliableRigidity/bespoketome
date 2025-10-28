@@ -41,7 +41,7 @@ def get_weather(location_name):
     params = {
         "latitude": lat,
         "longitude": lon,
-        "current_weather": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
+        "current_weather": "true",
         "timezone": location["timezone"]
     }
 
@@ -56,13 +56,19 @@ def get_weather(location_name):
     temp_c = current_weather.get("temperature_2m")
     wind = current_weather.get("wind_speed_10m")
     time_iso = current_weather.get("time")
+    
+    place = f'{location["name"]}, {location["country"]}'
 
     return {
-        "location": f'{location["name"]}, {location["country"]}',
+        "place": place,
+        "location": place,
+        "temperature_c": temp_c,
         "temperature": temp_c,
         "latitude": lat,
         "longitude": lon,
+        "wind_speed_kmh": wind,
         "windspeed": wind,
+        "weather_desc": desc,
         "weather_description": desc,
         "time": time_iso
     }
