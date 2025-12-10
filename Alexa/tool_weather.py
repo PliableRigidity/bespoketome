@@ -1,63 +1,56 @@
 import requests
-from config import OPEN_METEO_FORECAST
+from datetime import datetime, timezone
+
+from config import OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL
 from tools_geo import geocode_location
 
-WEATHER_CODES = {
-    0: "clear sky",
-    1: "mainly clear",
-    2: "partly cloudy",
-    3: "overcast",
-    45: "fog",
-    48: "depositing rime fog",
-    51: "light drizzle",
-    53: "moderate drizzle",
-    55: "dense drizzle",
-    56: "freezing drizzle",
-    57: "dense freezing drizzle",
-    61: "slight rain",
-    63: "moderate rain",
-    65: "heavy rain",
-    66: "freezing rain",
-    67: "heavy freezing rain",
-    71: "slight snow",
-    73: "moderate snow",
-    75: "heavy snow",
-    77: "snow grains",
-    80: "light showers",
-    81: "moderate showers",
-    82: "violent showers",
-    85: "light snow showers",
-    86: "heavy snow showers",
-    95: "thunderstorm",
-    96: "thunderstorm with slight hail",
-    99: "thunderstorm with heavy hail"
-}
-
 def get_weather(location_name):
-    """Get current weather for a specified location."""
+    """Get current weather for a specified location using OpenWeather."""
+    if not OPENWEATHER_API_KEY:
+        raise RuntimeError("OPENWEATHER_API_KEY is not set in config or environment.")
+
+    # 1) Geocode location (still via Open-Meteo)
     location = geocode_location(location_name)
     lat, lon = location["latitude"], location["longitude"]
-    
+
+    # 2) Call OpenWeather current weather API
     params = {
-        "latitude": lat,
-        "longitude": lon,
-        "current_weather": "true",
-        "timezone": location["timezone"]
+        "lat": lat,
+        "lon": lon,
+        "appid": OPENWEATHER_API_KEY,
+        "units": "metric",  # return °C, m/s
     }
 
-    response = requests.get(OPEN_METEO_FORECAST, params=params)
+    response = requests.get(OPENWEATHER_BASE_URL, params=params, timeout=5)
     response.raise_for_status()
     data = response.json()
-    current_weather = data.get("current_weather")
 
-    wcode = int(current_weather.get("weather_code", 0))
-    desc = WEATHER_CODES.get(wcode, f"code{wcode}")
+    # 3) Parse response
+    weather_list = data.get("weather", [])
+    weather = weather_list[0] if weather_list else {}
+    main = data.get("main", {})
+    wind = data.get("wind", {})
 
-    temp_c = current_weather.get("temperature_2m")
-    wind = current_weather.get("wind_speed_10m")
-    time_iso = current_weather.get("time")
-    
-    place = f'{location["name"]}, {location["country"]}'
+    # Description: prefer full description, fallback to 'main'
+    desc = (weather.get("description") or weather.get("main") or "").lower()
+
+    # Temperature in °C (because units=metric)
+    temp_c = main.get("temp")
+
+    # Wind: OpenWeather returns m/s in metric; convert to km/h
+    wind_ms = wind.get("speed")
+    wind_kmh = wind_ms * 3.6 if wind_ms is not None else None
+
+    # Time: OpenWeather 'dt' is a Unix timestamp (UTC)
+    dt_unix = data.get("dt")
+    time_iso = (
+        datetime.fromtimestamp(dt_unix, tz=timezone.utc).isoformat()
+        if dt_unix
+        else None
+    )
+
+    # Place label: prefer geocoded name + country for consistency
+    place = f'{location["name"]}, {location.get("country", "").strip()}'.strip(", ")
 
     return {
         "place": place,
@@ -66,9 +59,9 @@ def get_weather(location_name):
         "temperature": temp_c,
         "latitude": lat,
         "longitude": lon,
-        "wind_speed_kmh": wind,
-        "windspeed": wind,
+        "wind_speed_kmh": wind_kmh,
+        "windspeed": wind_kmh,
         "weather_desc": desc,
         "weather_description": desc,
-        "time": time_iso
+        "time": time_iso,
     }

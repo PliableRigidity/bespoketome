@@ -2,6 +2,11 @@
 from planner import plan
 from tools_time import get_time, get_time_in
 from tool_weather import get_weather
+from tool_web import search_web
+from tool_creative import brainstorm_ideas
+from tool_arxiv import search_arxiv
+
+from context_manager import get_context
 
 def _fmt_time_result(res: dict) -> str:
     if res.get("place"):
@@ -24,37 +29,72 @@ def handle_user_text(user_text: str) -> str:
     1) Ask the planner (LLM/regex) what to do.
     2) Run tool(s).
     3) Return a short, speakable reply.
+    4) Save conversation to context.
     """
     decision = plan(user_text)
 
     action = decision.get("action")
+    response = ""
+    
     if action == "final":
-        return decision.get("text", "Okay.")
-
-    if action == "call_tool":
+        response = decision.get("text", "Okay.")
+    elif action == "call_tool":
         name = decision.get("name")
         args = decision.get("args", {})
         if name == "get_time":
-            return _fmt_time_result(get_time())
-        if name == "get_time_in":
+            response = _fmt_time_result(get_time())
+        elif name == "get_time_in":
             place = args.get("place", "").strip()
             if not place:
-                return "Which city or country?"
-            try:
-                return _fmt_time_result(get_time_in(place))
-            except Exception as e:
-                return f"I couldn't resolve that place. {e}"
-        if name == "get_weather":
+                response = "Which city or country?"
+            else:
+                try:
+                    response = _fmt_time_result(get_time_in(place))
+                except Exception as e:
+                    response = f"I couldn't resolve that place. {e}"
+        elif name == "get_weather":
             place = args.get("place", "").strip()
             if not place:
-                return "Which city or country?"
-            try:
-                return _fmt_weather_result(get_weather(place))
-            except Exception as e:
-                return f"I couldn't get weather for that place. {e}"
-        return "Sorry, I can't do that yet."
+                response = "Which city or country?"
+            else:
+                try:
+                    response = _fmt_weather_result(get_weather(place))
+                except Exception as e:
+                    response = f"I couldn't get weather for that place. {e}"
+        elif name == "search_web":
+            query = args.get("query", "").strip()
+            if not query:
+                response = "What should I search for?"
+            else:
+                try:
+                    response = search_web(query)
+                except Exception as e:
+                    response = f"I couldn't search the web. {e}"
+        elif name == "brainstorm":
+            topic = args.get("topic", "").strip()
+            if not topic:
+                response = "I need a topic to brainstorm about."
+            else:
+                try:
+                    response = brainstorm_ideas(topic)
+                except Exception as e:
+                    response = f"I couldn't brainstorm ideas. {e}"
+                    
+        elif name == "search_arxiv":
+            query = args.get("query", "").strip()
+            if not query:
+                response = "What papers should I search for?"
+            else:
+                try:
+                    response = search_arxiv(query)
+                except Exception as e:
+                    response = f"I couldn't search ArXiv. {e}"
+                    
 
-    if action == "call_tools":
+                    
+        else:
+            response = "Sorry, I can't do that yet."
+    elif action == "call_tools":
         pieces = []
         for call in decision.get("calls", []):
             name = call.get("name")
@@ -79,6 +119,21 @@ def handle_user_text(user_text: str) -> str:
                         pieces.append(_fmt_weather_result(get_weather(place)))
                     except Exception as e:
                         pieces.append(f"Weather lookup failed: {e}")
-        return " ".join(pieces) if pieces else "Done."
-
-    return "Sorry, I didn’t understand that."
+            elif name == "search_web":
+                query = args.get("query", "").strip()
+                if not query:
+                    pieces.append("What should I search for?")
+                else:
+                    try:
+                        pieces.append(search_web(query))
+                    except Exception as e:
+                        pieces.append(f"Search failed: {e}")
+        response = " ".join(pieces) if pieces else "Done."
+    else:
+        response = "Sorry, I didn't understand that."
+    
+    # Save conversation turn to context
+    context = get_context()
+    context.add_turn(user_text, response)
+    
+    return response

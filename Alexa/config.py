@@ -12,10 +12,11 @@ TIMEZONE = os.getenv("TIMEZONE", "Europe/London")  # Change to your timezone
 
 # --- Open-Meteo APIs (no keys needed) ---
 OPEN_METEO_GEOCODE = "https://geocoding-api.open-meteo.com/v1/search"
-OPEN_METEO_FORECAST = "https://api.open-meteo.com/v1/forecast"
+OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+OPENWEATHER_API_KEY = "22e1474ac45784a18eb8b3cb4de8fe2c"
 
 # --- SearxNG Web Search (local instance) ---
-SEARXNG_URL = os.getenv("SEARXNG_URL", "http://localhost:8080")
+SEARXNG_URL = os.getenv("SEARXNG_URL", "http://localhost:8888")
 
 # --- Voice Pipeline Config ---
 # Wake word detection

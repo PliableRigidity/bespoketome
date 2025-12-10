@@ -8,12 +8,19 @@ from config import (
     USE_OLLAMA,
     LLM_TEMPERATURE,
 )
+from context_manager import get_context
 
 # ---------------------------------------------------------------------
 #  SYSTEM RULES  (updated to forbid fake tools like get_definition)
 # ---------------------------------------------------------------------
-SYSTEM_RULES = """You are a local assistant planner.
+SYSTEM_RULES = """You are a local assistant planner with conversation memory.
 You MUST output ONLY JSON. No extra text, no commentary.
+
+CONTEXT AWARENESS:
+- You have access to previous conversation turns in the message history.
+- Use this context to understand follow-up questions and references.
+- If the user says "it", "that", "there", etc., refer to previous messages.
+- Example: User asks "weather in Paris", then "what about the time?" - you should know they mean Paris.
 
 Valid response shapes:
 1) {"action":"call_tool","name":"<tool>","args":{...}}
@@ -30,13 +37,32 @@ TOOLS YOU ARE ALLOWED TO CALL (and ONLY these):
 - get_weather: args {"place": string}
   Use ONLY for questions about weather in a specific city/country.
 
-IMPORTANT:
-- DO NOT invent new tools. If a user asks something that is not time or weather, you MUST NOT create a new tool.
-- For questions about definitions, facts, explanations, how things work, who/what/why, trivia, etc.
-  (examples: "what is gravity", "who is Einstein", "explain photosynthesis"),
-  you MUST answer DIRECTLY using {"action":"final","text":"..."}.
-  DO NOT call any tool for these.
-  DO NOT invent tools like get_definition, search_web, wiki_lookup, etc.
+- search_web: args {"query": string}
+  Use for ANY question that requires factual information, news, specs, or specific data.
+
+- brainstorm: args {"topic": string}
+  Use for CREATIVE tasks, generating IDEAS, suggestions, or "thinking" tasks.
+
+- search_arxiv: args {"query": string}
+  Use for ACADEMIC RESEARCH, finding scientific papers, or searching for specific publications.
+
+
+
+IMPORTANT RULES:
+- DEFAULT TO SEARCH for facts.
+- USE BRAINSTORM for ideas/creativity.
+- USE SEARCH_ARXIV for academic/scientific papers.
+
+- When in doubt, USE search_web. It's better to search than to guess or say you don't know.
+- DO NOT say "I'm not familiar with that" or "I don't understand" for factual questions.
+- DO NOT try to answer factual questions from memory - always search for current, accurate info.
+- DO NOT invent new tools.
+
+ONLY use {"action":"final","text":"..."} for:
+- Simple greetings: "hello", "hi", "good morning"
+- Questions about YOUR capabilities: "what can you do", "how do you work"
+- Casual conversation that doesn't require facts: "how are you"
+- Clarification requests when user input is unclear
 
 - If the user asks for BOTH time and weather in the same place, respond with:
   {"action":"call_tools","calls":[
@@ -57,6 +83,7 @@ Formatting rules:
 #  FEW-SHOT examples to teach the model
 # ---------------------------------------------------------------------
 FEW_SHOTS = [
+    # Time and weather examples
     {"role": "user", "content": "what's the time"},
     {"role": "assistant", "content": json.dumps({
         "action": "call_tool", "name": "get_time", "args": {}
@@ -65,6 +92,35 @@ FEW_SHOTS = [
     {"role": "user", "content": "what's the time in tokyo"},
     {"role": "assistant", "content": json.dumps({
         "action": "call_tool", "name": "get_time_in", "args": {"place": "tokyo"}
+    })},
+
+    # Brainstorming examples
+    {"role": "user", "content": "give me some ideas for a python project"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "brainstorm", "args": {"topic": "python project ideas"}
+    })},
+
+    {"role": "user", "content": "suggest a cool name for a robot"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "brainstorm", "args": {"topic": "cool robot names"}
+    })},
+
+    # ArXiv examples
+    {"role": "user", "content": "find papers on machine learning"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_arxiv", "args": {"query": "machine learning"}
+    })},
+
+
+
+    {"role": "user", "content": "search arxiv for black holes"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_arxiv", "args": {"query": "black holes"}
+    })},
+
+    {"role": "user", "content": "how can I make my room look better"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "brainstorm", "args": {"topic": "room decoration ideas"}
     })},
 
     {"role": "user", "content": "weather in singapore"},
@@ -87,10 +143,89 @@ FEW_SHOTS = [
         "text": "Which city or country should I check the weather for?"
     })},
 
+    # News and current events
+    {"role": "user", "content": "latest news on spacex"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "latest news spacex"}
+    })},
+
+    # People and personalities
+    {"role": "user", "content": "who is elon musk"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "elon musk"}
+    })},
+
+    {"role": "user", "content": "tell me about taylor swift"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "taylor swift"}
+    })},
+
+    # Sports and events
+    {"role": "user", "content": "who won the world cup 2022"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "who won world cup 2022"}
+    })},
+
+    # Specifications and technical details
+    {"role": "user", "content": "what are the specs of a tesla model 3"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "tesla model 3 specs"}
+    })},
+
+    {"role": "user", "content": "how much does an iphone 15 cost"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "iphone 15 price"}
+    })},
+
+    {"role": "user", "content": "what's the top speed of a bugatti chiron"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "bugatti chiron top speed"}
+    })},
+
+    # How things work and explanations
+    {"role": "user", "content": "how does a car engine work"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "how does car engine work"}
+    })},
+
+    {"role": "user", "content": "how do you make coffee"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "how to make coffee"}
+    })},
+
+    {"role": "user", "content": "explain photosynthesis"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "explain photosynthesis"}
+    })},
+
+    # General knowledge and definitions
     {"role": "user", "content": "what is gravity"},
     {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "what is gravity"}
+    })},
+
+    {"role": "user", "content": "what is the capital of france"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "capital of france"}
+    })},
+
+    # Comparisons
+    {"role": "user", "content": "which is better iphone or samsung"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "iphone vs samsung comparison"}
+    })},
+
+    # Simple greetings (should NOT search)
+    {"role": "user", "content": "hello"},
+    {"role": "assistant", "content": json.dumps({
         "action": "final",
-        "text": "Gravity is the force that pulls objects with mass toward each other, like how Earth pulls us down."
+        "text": "Hello! How can I help you today?"
+    })},
+
+    {"role": "user", "content": "what can you do"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "final",
+        "text": "I can tell you the time and weather, search the web for information, and answer questions about almost anything!"
     })},
 ]
 
@@ -145,9 +280,14 @@ def _safe_json(raw: str) -> dict:
 def plan_with_ollama(user_text: str) -> dict:
     url = f"{OLLAMA_URL}/api/chat"
 
+    # Get conversation history
+    context = get_context()
+    history_messages = context.get_context_messages()
+    
     messages = (
         [{"role": "system", "content": SYSTEM_RULES}]
         + FEW_SHOTS
+        + history_messages  # Add conversation history
         + [{"role": "user", "content": user_text}]
     )
 

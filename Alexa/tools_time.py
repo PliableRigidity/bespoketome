@@ -10,7 +10,7 @@ def get_time():
     return {
         "iso": now.isoformat(timespec='seconds'),
         "tz": TIMEZONE,
-        "human": now.strftime("%A, %d %B %Y, %I:%M %p").lstrip("0"),
+        "human": now.strftime("%I:%M %p").lstrip("0"),
         "place": None  # No specific place for local time
     }
 
@@ -25,6 +25,6 @@ def get_time_in(location_name):
         "location": place,
         "tz": location["timezone"],
         "iso": now.isoformat(timespec='seconds'),
-        "human": now.strftime("%A, %d %B %Y, %I:%M %p").lstrip("0")
+        "human": now.strftime("%I:%M %p").lstrip("0")
         }
 
