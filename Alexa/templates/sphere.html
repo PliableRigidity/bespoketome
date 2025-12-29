@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Particle Sphere</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d4ff;
+            --primary-dark: #0099cc;
+            --bg-dark: #0a0e27;
+            --bg-darker: #050814;
+            --accent: #7c3aed;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(ellipse at center, var(--bg-dark) 0%, var(--bg-darker) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        .grid-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* Canvas container */
+        .canvas-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        #particleCanvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Status display */
+        .status-container {
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 20;
+            background: rgba(21, 27, 61, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 20;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(160, 174, 192, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid rgba(160, 174, 192, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(160, 174, 192, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Info panel */
+        .info-panel {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(21, 27, 61, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            max-width: 300px;
+            z-index: 20;
+        }
+
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .info-item {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .info-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Command display */
+        .command-display {
+            position: absolute;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(21, 27, 61, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            max-width: 600px;
+            text-align: center;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .command-display.visible {
+            opacity: 1;
+        }
+
+        .command-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .command-text {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Pulsing animation for active state */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+            }
+        }
+
+        .status-container.active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="grid-background"></div>
+
+    <!-- Status Display -->
+    <div class="status-container" id="statusContainer">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <h1>JARVIS</h1>
+        </div>
+        <div class="status-text" id="statusText">Particle Sphere</div>
+        <div class="status-description" id="statusDescription">Click Start to activate voice control</div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <div class="info-title">Sphere Stats</div>
+        <div class="info-item"><span class="info-label">Particles:</span> <span id="particleCount">1000</span></div>
+        <div class="info-item"><span class="info-label">Audio Level:</span> <span id="audioLevel">0%</span></div>
+        <div class="info-item"><span class="info-label">Reactivity:</span> <span id="reactivity">Normal</span></div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-container">
+        <canvas id="particleCanvas"></canvas>
+    </div>
+
+    <!-- Command Display -->
+    <div class="command-display" id="commandDisplay">
+        <div class="command-label" id="commandLabel">Listening</div>
+        <div class="command-text" id="commandText">...</div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="btn btn-primary" id="startBtn">Start Voice Assistant</button>
+        <button class="btn btn-secondary" id="stopBtn" style="display: none;">Stop</button>
+    </div>
+
+    <script>
+        // Socket.IO connection
+        const socket = io();
+
+        // Canvas setup
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth * 0.8, 800);
+            canvas.height = Math.min(window.innerHeight * 0.6, 800);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle system
+        class Particle {
+            constructor(index, total) {
+                this.reset(index, total);
+                this.baseRadius = this.radius;
+                this.baseTheta = this.theta;
+                this.basePhi = this.phi;
+            }
+
+            reset(index, total) {
+                // Fibonacci sphere distribution for even particle placement
+                const phi = Math.acos(1 - 2 * (index + 0.5) / total);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * index;
+
+                this.theta = theta;
+                this.phi = phi;
+                this.radius = 150;
+
+                // Random properties for variation
+                this.speed = 0.001 + Math.random() * 0.002;
+                this.size = 1.5 + Math.random() * 1.5;
+                this.color = this.getColor();
+
+                // Audio reactivity
+                this.reactivity = 0.5 + Math.random() * 0.5;
+                this.audioOffset = 0;
+            }
+
+            getColor() {
+                const colors = [
+                    'rgba(0, 212, 255, 0.8)',   // Primary cyan
+                    'rgba(124, 58, 237, 0.8)',  // Accent purple
+                    'rgba(0, 153, 204, 0.8)',   // Dark cyan
+                    'rgba(147, 197, 253, 0.8)'  // Light blue
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update(audioLevel, time) {
+                // Rotate particles
+                this.theta += this.speed;
+
+                // React to audio
+                this.audioOffset = audioLevel * this.reactivity * 50;
+
+                // Calculate 3D position
+                const r = this.radius + this.audioOffset;
+                this.x = r * Math.sin(this.phi) * Math.cos(this.theta);
+                this.y = r * Math.sin(this.phi) * Math.sin(this.theta);
+                this.z = r * Math.cos(this.phi);
+
+                // Add wave effect based on audio
+                const wave = Math.sin(time * 0.001 + this.theta) * audioLevel * 20;
+                this.x += wave;
+                this.y += wave;
+            }
+
+            draw(centerX, centerY, audioLevel) {
+                // Simple depth sorting (z-index)
+                const scale = 1 + (this.z / 300);
+                const size = this.size * scale * (1 + audioLevel * 0.5);
+                const alpha = 0.3 + (this.z / 300) * 0.7;
+
+                // Project to 2D
+                const x = centerX + this.x;
+                const y = centerY + this.y;
+
+                // Draw particle with glow
+                ctx.shadowBlur = 10 + audioLevel * 20;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color.replace('0.8', alpha.toString());
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw connections to nearby particles (optional, for effect)
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Particle system state
+        const particleCount = 1000;
+        const particles = [];
+        let audioLevel = 0;
+        let targetAudioLevel = 0;
+        let isActive = false;
+        let animationTime = 0;
+
+        // Initialize particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(i, particleCount));
+        }
+
+        // Audio level smoothing
+        function updateAudioLevel() {
+            audioLevel += (targetAudioLevel - audioLevel) * 0.1;
+            if (Math.abs(targetAudioLevel - audioLevel) < 0.01) {
+                audioLevel = targetAudioLevel;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            animationTime += 16; // Approximate 60fps
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update audio level
+            updateAudioLevel();
+
+            // Center of canvas
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Sort particles by z-index for proper depth
+            particles.sort((a, b) => a.z - b.z);
+
+            // Update and draw particles
+            particles.forEach(particle => {
+                particle.update(audioLevel, animationTime);
+                particle.draw(centerX, centerY, audioLevel);
+            });
+
+            // Update UI
+            document.getElementById('audioLevel').textContent = Math.round(audioLevel * 100) + '%';
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+
+        // UI Elements
+        const statusContainer = document.getElementById('statusContainer');
+        const statusText = document.getElementById('statusText');
+        const statusDescription = document.getElementById('statusDescription');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const commandDisplay = document.getElementById('commandDisplay');
+        const commandLabel = document.getElementById('commandLabel');
+        const commandText = document.getElementById('commandText');
+        const reactivitySpan = document.getElementById('reactivity');
+
+        // Voice assistant controls
+        async function startVoice() {
+            try {
+                startBtn.disabled = true;
+                const response = await fetch('/api/voice/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error starting voice assistant: ' + data.error);
+                    startBtn.disabled = false;
+                } else {
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'block';
+                    isActive = true;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                startBtn.disabled = false;
+            }
+        }
+
+        async function stopVoice() {
+            try {
+                const response = await fetch('/api/voice/stop', { method: 'POST' });
+                const data = await response.json();
+
+                startBtn.style.display = 'block';
+                startBtn.disabled = false;
+                stopBtn.style.display = 'none';
+                isActive = false;
+                targetAudioLevel = 0;
+                statusContainer.classList.remove('active');
+                commandDisplay.classList.remove('visible');
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        startBtn.addEventListener('click', startVoice);
+        stopBtn.addEventListener('click', stopVoice);
+
+        // Socket.IO event handlers
+        socket.on('voice_status', (data) => {
+            updateVoiceStatus(data.status);
+        });
+
+        socket.on('voice_interaction', (data) => {
+            showCommand(data.command, data.response);
+        });
+
+        socket.on('audio_level', (data) => {
+            // Real-time audio level from server
+            targetAudioLevel = Math.min(data.level, 1.0);
+        });
+
+        function updateVoiceStatus(status) {
+            const statusMap = {
+                'idle': {
+                    text: 'Idle',
+                    desc: 'Voice assistant stopped',
+                    active: false,
+                    audioLevel: 0,
+                    reactivity: 'Low'
+                },
+                'listening_for_wake_word': {
+                    text: 'Listening',
+                    desc: 'Say "Hey Jarvis" to activate',
+                    active: true,
+                    audioLevel: 0.1,
+                    reactivity: 'Normal'
+                },
+                'wake_word_detected': {
+                    text: 'Activated!',
+                    desc: 'Wake word detected',
+                    active: true,
+                    audioLevel: 0.5,
+                    reactivity: 'High'
+                },
+                'recording': {
+                    text: 'Recording',
+                    desc: 'Listening to your command...',
+                    active: true,
+                    audioLevel: 0.6,
+                    reactivity: 'High'
+                },
+                'processing': {
+                    text: 'Processing',
+                    desc: 'Understanding your request...',
+                    active: true,
+                    audioLevel: 0.4,
+                    reactivity: 'Medium'
+                },
+                'speaking': {
+                    text: 'Speaking',
+                    desc: 'Playing response...',
+                    active: true,
+                    audioLevel: 0.8,
+                    reactivity: 'Very High'
+                }
+            };
+
+            const statusInfo = statusMap[status] || statusMap['idle'];
+            statusText.textContent = statusInfo.text;
+            statusDescription.textContent = statusInfo.desc;
+            reactivitySpan.textContent = statusInfo.reactivity;
+
+            if (statusInfo.active) {
+                statusContainer.classList.add('active');
+                targetAudioLevel = statusInfo.audioLevel;
+            } else {
+                statusContainer.classList.remove('active');
+                targetAudioLevel = 0;
+            }
+        }
+
+        function showCommand(command, response) {
+            // Show command
+            commandLabel.textContent = 'You said';
+            commandText.textContent = command;
+            commandDisplay.classList.add('visible');
+
+            // Pulse effect
+            targetAudioLevel = 0.7;
+
+            setTimeout(() => {
+                // Show response
+                commandLabel.textContent = 'Jarvis responded';
+                commandText.textContent = response.substring(0, 100) + (response.length > 100 ? '...' : '');
+
+                // Increase audio level for speaking
+                targetAudioLevel = 0.9;
+            }, 2000);
+
+            setTimeout(() => {
+                commandDisplay.classList.remove('visible');
+                targetAudioLevel = 0.1;
+            }, 6000);
+        }
+
+        // Mouse interaction
+        let mouseX = 0;
+        let mouseY = 0;
+        let isMouseDown = false;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left - canvas.width / 2;
+            mouseY = e.clientY - rect.top - canvas.height / 2;
+
+            if (isMouseDown) {
+                // Rotate sphere with mouse
+                particles.forEach(particle => {
+                    particle.theta += mouseX * 0.0001;
+                    particle.phi += mouseY * 0.0001;
+                });
+            }
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            isMouseDown = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        // Simulate audio levels for testing (remove when real audio is connected)
+        // setInterval(() => {
+        //     if (isActive && Math.random() > 0.7) {
+        //         targetAudioLevel = Math.random() * 0.8;
+        //         setTimeout(() => targetAudioLevel = 0.1, 1000);
+        //     }
+        // }, 2000);
+    </script>
+</body>
+
+</html>

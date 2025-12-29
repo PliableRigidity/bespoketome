@@ -29,7 +29,8 @@ WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")  # "cuda" for GPU
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 
 # TTS - Piper
-PIPER_MODEL_PATH = os.getenv("PIPER_MODEL_PATH", "C:/Piper/models/en-us-ryan-high.onnx")
+PIPER_MODEL_PATH = os.getenv("PIPER_MODEL_PATH", "C:/Users/IshaanV/piperdata/en_US-lessac-medium.onnx")
+PIPER_CONFIG_PATH = os.getenv("PIPER_CONFIG_PATH", "C:/Users/IshaanV/piperdata/en_US-lessac-medium.onnx.json")
 PIPER_USE_CUDA = os.getenv("PIPER_USE_CUDA", "false").lower() == "true"
 
 # Audio recording

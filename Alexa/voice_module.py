@@ -67,6 +67,7 @@ class VoiceAssistant:
         # Status
         self.status = "idle"
         self.status_callback = None
+        self.audio_level_callback = None
         
         # Recording state
         self.recording_start_time = 0
@@ -76,6 +77,10 @@ class VoiceAssistant:
     def set_status_callback(self, callback):
         """Set callback for status updates"""
         self.status_callback = callback
+    
+    def set_audio_level_callback(self, callback):
+        """Set callback for audio level updates during speech playback"""
+        self.audio_level_callback = callback
         
     def update_status(self, status):
         """Update status and notify callback"""
@@ -325,7 +330,7 @@ class VoiceAssistant:
             self.update_status("listening_for_wake_word")
             
     def _play_audio_file(self, filepath):
-        """Play an audio file"""
+        """Play an audio file and emit audio levels for visualization"""
         try:
             # Read WAV file
             with wave.open(filepath, 'rb') as wf:
@@ -337,12 +342,28 @@ class VoiceAssistant:
                     output=True
                 )
                 
-                # Play audio
+                # Play audio and calculate levels
                 chunk_size = 1024
                 data = wf.readframes(chunk_size)
                 
                 while data:
                     stream.write(data)
+                    
+                    # Calculate audio level for visualization
+                    if self.audio_level_callback and len(data) > 0:
+                        try:
+                            # Convert to numpy array and calculate RMS
+                            audio_array = np.frombuffer(data, dtype=np.int16).astype(np.float32)
+                            rms = np.sqrt(np.mean(audio_array**2))
+                            
+                            # Normalize to 0-1 range (assuming 16-bit audio)
+                            normalized_level = min(rms / 3000.0, 1.0)
+                            
+                            # Emit audio level
+                            self.audio_level_callback(normalized_level)
+                        except Exception as e:
+                            pass  # Silently ignore audio level calculation errors
+                    
                     data = wf.readframes(chunk_size)
                 
                 stream.stop_stream()

@@ -9,6 +9,7 @@ from context_manager import get_context
 import os
 import json
 from datetime import datetime
+import config
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'jarvis-secret-key'
@@ -37,6 +38,16 @@ def save_saved_chats(chats):
 def index():
     """Serve the main web interface"""
     return render_template('index.html')
+
+@app.route('/sphere')
+def sphere():
+    """Serve the particle sphere visualization interface"""
+    return render_template('sphere.html')
+
+@app.route('/sphere/demo')
+def sphere_demo():
+    """Serve the particle sphere demo (no voice assistant required)"""
+    return render_template('sphere_demo.html')
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -151,13 +162,18 @@ def start_voice_assistant():
                 """Handle status updates"""
                 socketio.emit('voice_status', {'status': status})
             
+            def audio_level_callback(level):
+                """Handle audio level updates for visualization"""
+                socketio.emit('audio_level', {'level': level})
+            
             voice_assistant = VoiceAssistant(callback=voice_callback)
             voice_assistant.set_status_callback(status_callback)
+            voice_assistant.set_audio_level_callback(audio_level_callback)
             
             # Set Piper model if configured
             data = request.get_json() or {}
-            piper_model = data.get('piper_model')
-            piper_config = data.get('piper_config')
+            piper_model = data.get('piper_model') or config.PIPER_MODEL_PATH
+            piper_config = data.get('piper_config') or config.PIPER_CONFIG_PATH
             
             if piper_model:
                 voice_assistant.set_piper_model(piper_model, piper_config)

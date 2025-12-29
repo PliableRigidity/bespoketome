@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - Particle Sphere (Demo Mode)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d4ff;
+            --primary-dark: #0099cc;
+            --bg-dark: #0a0e27;
+            --bg-darker: #050814;
+            --accent: #7c3aed;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(ellipse at center, var(--bg-dark) 0%, var(--bg-darker) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        .grid-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* Canvas container */
+        .canvas-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        #particleCanvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Status display */
+        .status-container {
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 20;
+            background: rgba(21, 27, 61, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 20;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(160, 174, 192, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid rgba(160, 174, 192, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(160, 174, 192, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Info panel */
+        .info-panel {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(21, 27, 61, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            max-width: 300px;
+            z-index: 20;
+        }
+
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .info-item {
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .info-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Pulsing animation for active state */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+            }
+        }
+
+        .status-container.active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .demo-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="grid-background"></div>
+
+    <!-- Status Display -->
+    <div class="status-container active" id="statusContainer">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <h1>JARVIS</h1>
+        </div>
+        <div class="status-text" id="statusText">Demo Mode Active</div>
+        <div class="status-description" id="statusDescription">Simulating audio reactivity</div>
+        <div class="demo-badge">Demo Mode</div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <div class="info-title">Sphere Stats</div>
+        <div class="info-item"><span class="info-label">Particles:</span> <span id="particleCount">1000</span></div>
+        <div class="info-item"><span class="info-label">Audio Level:</span> <span id="audioLevel">0%</span></div>
+        <div class="info-item"><span class="info-label">Mode:</span> <span id="mode">Simulated</span></div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-container">
+        <canvas id="particleCanvas"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="btn-group">
+            <button class="btn btn-primary" id="startDemo">▶ Start Demo</button>
+            <button class="btn btn-secondary" id="stopDemo" style="display: none;">⏸ Pause</button>
+        </div>
+        <div class="demo-info">
+            Drag the sphere to rotate • Click buttons to simulate audio
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth * 0.8, 800);
+            canvas.height = Math.min(window.innerHeight * 0.6, 800);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Particle system
+        class Particle {
+            constructor(index, total) {
+                this.reset(index, total);
+            }
+
+            reset(index, total) {
+                // Fibonacci sphere distribution
+                const phi = Math.acos(1 - 2 * (index + 0.5) / total);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * index;
+
+                this.theta = theta;
+                this.phi = phi;
+                this.radius = 150;
+
+                this.speed = 0.001 + Math.random() * 0.002;
+                this.size = 1.5 + Math.random() * 1.5;
+                this.color = this.getColor();
+
+                this.reactivity = 0.5 + Math.random() * 0.5;
+                this.audioOffset = 0;
+            }
+
+            getColor() {
+                const colors = [
+                    'rgba(0, 212, 255, 0.8)',
+                    'rgba(124, 58, 237, 0.8)',
+                    'rgba(0, 153, 204, 0.8)',
+                    'rgba(147, 197, 253, 0.8)'
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update(audioLevel, time) {
+                this.theta += this.speed;
+                this.audioOffset = audioLevel * this.reactivity * 50;
+
+                const r = this.radius + this.audioOffset;
+                this.x = r * Math.sin(this.phi) * Math.cos(this.theta);
+                this.y = r * Math.sin(this.phi) * Math.sin(this.theta);
+                this.z = r * Math.cos(this.phi);
+
+                const wave = Math.sin(time * 0.001 + this.theta) * audioLevel * 20;
+                this.x += wave;
+                this.y += wave;
+            }
+
+            draw(centerX, centerY, audioLevel) {
+                const scale = 1 + (this.z / 300);
+                const size = this.size * scale * (1 + audioLevel * 0.5);
+                const alpha = 0.3 + (this.z / 300) * 0.7;
+
+                const x = centerX + this.x;
+                const y = centerY + this.y;
+
+                ctx.shadowBlur = 10 + audioLevel * 20;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = this.color.replace('0.8', alpha.toString());
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Particle system state
+        const particleCount = 1000;
+        const particles = [];
+        let audioLevel = 0;
+        let targetAudioLevel = 0;
+        let isActive = false;
+        let animationTime = 0;
+        let demoInterval = null;
+
+        // Initialize particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle(i, particleCount));
+        }
+
+        // Audio level smoothing
+        function updateAudioLevel() {
+            audioLevel += (targetAudioLevel - audioLevel) * 0.1;
+            if (Math.abs(targetAudioLevel - audioLevel) < 0.01) {
+                audioLevel = targetAudioLevel;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            animationTime += 16;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateAudioLevel();
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            particles.sort((a, b) => a.z - b.z);
+
+            particles.forEach(particle => {
+                particle.update(audioLevel, animationTime);
+                particle.draw(centerX, centerY, audioLevel);
+            });
+
+            document.getElementById('audioLevel').textContent = Math.round(audioLevel * 100) + '%';
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+
+        // UI Elements
+        const statusText = document.getElementById('statusText');
+        const statusDescription = document.getElementById('statusDescription');
+        const startBtn = document.getElementById('startDemo');
+        const stopBtn = document.getElementById('stopDemo');
+
+        // Demo simulation
+        function startDemo() {
+            isActive = true;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'block';
+
+            statusText.textContent = 'Simulating Speech';
+            statusDescription.textContent = 'Watch the particles react!';
+
+            // Simulate audio patterns
+            demoInterval = setInterval(() => {
+                // Random speech-like pattern
+                const pattern = Math.random();
+
+                if (pattern < 0.3) {
+                    // Silence
+                    targetAudioLevel = 0.1;
+                    statusText.textContent = 'Listening...';
+                } else if (pattern < 0.6) {
+                    // Speaking
+                    targetAudioLevel = 0.7 + Math.random() * 0.3;
+                    statusText.textContent = 'Speaking';
+                } else {
+                    // Processing
+                    targetAudioLevel = 0.4;
+                    statusText.textContent = 'Processing';
+                }
+            }, 2000);
+        }
+
+        function stopDemo() {
+            isActive = false;
+            startBtn.style.display = 'block';
+            stopBtn.style.display = 'none';
+
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+
+            targetAudioLevel = 0;
+            statusText.textContent = 'Demo Paused';
+            statusDescription.textContent = 'Click Start to resume';
+        }
+
+        startBtn.addEventListener('click', startDemo);
+        stopBtn.addEventListener('click', stopDemo);
+
+        // Mouse interaction
+        let mouseX = 0;
+        let mouseY = 0;
+        let isMouseDown = false;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left - canvas.width / 2;
+            mouseY = e.clientY - rect.top - canvas.height / 2;
+
+            if (isMouseDown) {
+                particles.forEach(particle => {
+                    particle.theta += mouseX * 0.0001;
+                    particle.phi += mouseY * 0.0001;
+                });
+            }
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            isMouseDown = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        // Auto-start demo after 1 second
+        setTimeout(() => {
+            startDemo();
+        }, 1000);
+    </script>
+</body>
+
+</html>
