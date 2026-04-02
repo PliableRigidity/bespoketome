@@ -13,7 +13,7 @@ TIMEZONE = os.getenv("TIMEZONE", "Europe/London")  # Change to your timezone
 # --- Open-Meteo APIs (no keys needed) ---
 OPEN_METEO_GEOCODE = "https://geocoding-api.open-meteo.com/v1/search"
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
-OPENWEATHER_API_KEY = "22e1474ac45784a18eb8b3cb4de8fe2c"
+OPENWEATHER_API_KEY = "**********" #Fill with your own API key
 
 # --- SearxNG Web Search (local instance) ---
 SEARXNG_URL = os.getenv("SEARXNG_URL", "http://localhost:8888")
@@ -29,8 +29,8 @@ WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")  # "cuda" for GPU
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
 
 # TTS - Piper
-PIPER_MODEL_PATH = os.getenv("PIPER_MODEL_PATH", "C:/Users/IshaanV/piperdata/en_US-lessac-medium.onnx")
-PIPER_CONFIG_PATH = os.getenv("PIPER_CONFIG_PATH", "C:/Users/IshaanV/piperdata/en_US-lessac-medium.onnx.json")
+PIPER_MODEL_PATH = os.getenv("PIPER_MODEL_PATH", "C:/Users/[Username]/piperdata/en_US-lessac-medium.onnx")
+PIPER_CONFIG_PATH = os.getenv("PIPER_CONFIG_PATH", "C:/Users/[Username]/piperdata/en_US-lessac-medium.onnx.json")
 PIPER_USE_CUDA = os.getenv("PIPER_USE_CUDA", "false").lower() == "true"
 
 # Audio recording
