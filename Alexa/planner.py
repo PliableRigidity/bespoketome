@@ -46,6 +46,10 @@ TOOLS YOU ARE ALLOWED TO CALL (and ONLY these):
 - search_arxiv: args {"query": string}
   Use for ACADEMIC RESEARCH, finding scientific papers, or searching for specific publications.
 
+- image_search: args {"query": string}
+  Use when user explicitly asks for "images", "pictures", "photos", or "show me X".
+  Example: "show me a cat" -> call image_search.
+
 
 
 IMPORTANT RULES:
@@ -204,6 +208,17 @@ FEW_SHOTS = [
         "action": "call_tool", "name": "search_web", "args": {"query": "what is gravity"}
     })},
 
+    # Image Search
+    {"role": "user", "content": "show me a picture of a cat"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "image_search", "args": {"query": "cat"}
+    })},
+    
+    {"role": "user", "content": "images of mars rover"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "image_search", "args": {"query": "mars rover"}
+    })},
+
     {"role": "user", "content": "what is the capital of france"},
     {"role": "assistant", "content": json.dumps({
         "action": "call_tool", "name": "search_web", "args": {"query": "capital of france"}
@@ -213,6 +228,12 @@ FEW_SHOTS = [
     {"role": "user", "content": "which is better iphone or samsung"},
     {"role": "assistant", "content": json.dumps({
         "action": "call_tool", "name": "search_web", "args": {"query": "iphone vs samsung comparison"}
+    })},
+
+    # Complex how-to / DIY
+    {"role": "user", "content": "how can i make a robot arm"},
+    {"role": "assistant", "content": json.dumps({
+        "action": "call_tool", "name": "search_web", "args": {"query": "how to build a robot arm DIY guide"}
     })},
 
     # Simple greetings (should NOT search)

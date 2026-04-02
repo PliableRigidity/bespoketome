@@ -1,16 +1,24 @@
-# JARVIS - AI Assistant
+# VECTOR - AI Assistant
 
 A powerful AI assistant with both terminal and web interfaces, featuring context memory, web search, Wikipedia integration, and more.
 
 ## Features
 
+### Core Capabilities
 - 🤖 **Dual Interface**: Use via terminal or web browser
 - 🧠 **Context Memory**: Remembers conversation history
-- 🌐 **Web Search**: Powered by local SearXNG instance
+- 🌐 **Web Search**: Powered by DuckDuckGo with image search
 - 📚 **Wikipedia Integration**: Extracts full article content
 - ⏰ **Time & Weather**: Get current time and weather for any location
 - 💬 **Natural Conversations**: Context-aware responses
-- 🎨 **Beautiful Web UI**: Modern, responsive design
+- 🎨 **Beautiful Web UI**: Modern, responsive design with futuristic theme
+
+### Advanced Modules (Web UI)
+- ✅ **Tasks**: Create, track, and manage tasks with priorities and filters
+- 🧠 **Memory**: Save and search long-term memories and notes
+- 🔍 **Retrieval**: View search history, configure retrieval settings
+- ⚙️ **Systems**: Monitor LLM, web search, and system health status
+- 🤖 **Robots**: Control simulated robots with live visualization (SimBot-01)
 
 ## Quick Start
 
@@ -110,7 +118,7 @@ TIMEZONE = "Europe/London"
 ## API Endpoints (Web Interface)
 
 ### POST /api/chat
-Send a message to Jarvis
+Send a message to Vector
 
 **Request:**
 ```json

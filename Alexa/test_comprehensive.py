@@ -1,12 +1,12 @@
 """
-Comprehensive test for Jarvis's expanded search capabilities
+Comprehensive test for Vector's expanded search capabilities
 """
 from dispatcher import handle_user_text
 from context_manager import get_context
 
 def test_comprehensive_search():
     print("="*60)
-    print("TESTING JARVIS COMPREHENSIVE SEARCH CAPABILITIES")
+    print("TESTING VECTOR COMPREHENSIVE SEARCH CAPABILITIES")
     print("="*60 + "\n")
     
     # Clear context

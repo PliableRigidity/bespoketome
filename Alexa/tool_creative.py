@@ -6,7 +6,7 @@ def brainstorm_ideas(topic: str) -> str:
     Generate creative ideas and suggestions using the LLM's internal knowledge.
     Does NOT search the web.
     """
-    prompt = f"""You are Jarvis, a creative and intelligent AI assistant.
+    prompt = f"""You are Vector, a creative and intelligent AI assistant.
 The user wants you to brainstorm ideas about: "{topic}"
 
 IMPORTANT INSTRUCTIONS:

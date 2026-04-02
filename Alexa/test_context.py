@@ -15,13 +15,13 @@ def test_context():
     print("Test 1: Ask about weather")
     response1 = handle_user_text("What's the weather in Tokyo?")
     print(f"User: What's the weather in Tokyo?")
-    print(f"Jarvis: {response1}\n")
+    print(f"Vector: {response1}\n")
     
     # Test 2: Follow-up question using context
     print("Test 2: Follow-up question (should remember Tokyo)")
     response2 = handle_user_text("What about the time there?")
     print(f"User: What about the time there?")
-    print(f"Jarvis: {response2}\n")
+    print(f"Vector: {response2}\n")
     
     # Show context
     print("Conversation history:")

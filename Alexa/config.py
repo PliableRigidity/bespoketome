@@ -38,3 +38,14 @@ AUDIO_CHANNELS = int(os.getenv("AUDIO_CHANNELS", "1"))
 AUDIO_RATE = int(os.getenv("AUDIO_RATE", "16000"))
 AUDIO_CHUNK = int(os.getenv("AUDIO_CHUNK", "1024"))
 AUDIO_DEVICE_INDEX = int(os.getenv("AUDIO_DEVICE_INDEX", "0"))
+
+# --- ArXiv MCP Config ---
+# By default, use direct API fallback unless configured
+USE_ARXIV_MCP = os.getenv("USE_ARXIV_MCP", "1") == "1"
+# Command to run ArXiv MCP server. Adjust image name if needed.
+# Example: docker run -i --rm -e PYTHONUNBUFFERED=1 ghcr.io/modelcontextprotocol/servers/arxiv
+ARXIV_MCP_COMMAND = os.getenv("ARXIV_MCP_COMMAND", "docker").split(" ")
+ARXIV_MCP_ARGS = os.getenv("ARXIV_MCP_ARGS", "run -i --rm -e PYTHONUNBUFFERED=1 ghcr.io/modelcontextprotocol/servers/arxiv:latest").split(" ")
+
+# --- Retrieval Debug ---
+RETRIEVAL_DEBUG = os.getenv("RETRIEVAL_DEBUG", "0") == "1"  # Set to 1 to enable debug output

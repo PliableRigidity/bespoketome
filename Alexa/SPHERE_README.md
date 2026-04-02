@@ -1,13 +1,13 @@
-# JARVIS Particle Sphere Visualization
+# VECTOR Particle Sphere Visualization
 
-A stunning 3D particle sphere visualization that reacts in real-time to Jarvis's voice output.
+A stunning 3D particle sphere visualization that reacts in real-time to Vector's voice output.
 
 ## Features
 
 ### Visual Design
 - **1000 Particles**: Arranged in a perfect sphere using Fibonacci distribution for even spacing
 - **3D Rotation**: Particles continuously rotate in 3D space
-- **Audio Reactivity**: Particles expand and pulse based on Jarvis's speech amplitude
+- **Audio Reactivity**: Particles expand and pulse based on Vector's speech amplitude
 - **Smooth Animations**: Fluid transitions and movements
 - **Interactive**: Drag to rotate the sphere manually
 - **Premium Aesthetics**: Glassmorphism, gradients, and dynamic lighting effects
@@ -25,7 +25,7 @@ The sphere reacts differently to each state:
 - **Wake Word Detected**: Burst of activity
 - **Recording**: High reactivity to your voice
 - **Processing**: Medium activity while thinking
-- **Speaking**: Maximum reactivity, particles dance to Jarvis's voice
+- **Speaking**: Maximum reactivity, particles dance to Vector's voice
 
 ## How to Use
 
@@ -41,7 +41,7 @@ Navigate to: `http://localhost:5000/sphere`
 Click the "Start Voice Assistant" button
 
 ### 4. Interact
-- Say "Hey Jarvis" to activate
+- Say "Hey Vector" to activate
 - Watch the particles react to the conversation
 - Drag the sphere to rotate it manually
 

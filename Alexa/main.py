@@ -4,7 +4,7 @@ import sys
 
 def main():
     print("--------------------------------------------------")
-    print("       JARVIS TERMINAL INTERFACE v2.0")
+    print("       VECTOR TERMINAL INTERFACE v2.0")
     print("--------------------------------------------------")
     print("Type 'exit' or 'quit' to stop.")
     print("Type 'clear context' to clear conversation history.")
@@ -34,19 +34,19 @@ def main():
             # Handle context management commands
             if user_text.lower() == "clear context":
                 context.clear()
-                print("Jarvis: Conversation history cleared.\n")
+                print("Vector: Conversation history cleared.\n")
                 continue
             
             if user_text.lower() == "show context":
                 summary = context.get_summary()
-                print(f"Jarvis: {summary}\n")
+                print(f"Vector: {summary}\n")
                 continue
             
             print("Thinking...", end="\r")
             response = handle_user_text(user_text)
             # Clear "Thinking..." line
             print(" " * 20, end="\r")
-            print(f"Jarvis: {response}\n")
+            print(f"Vector: {response}\n")
             
         except KeyboardInterrupt:
             print("\nGoodbye.")

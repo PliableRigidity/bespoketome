@@ -1,6 +1,6 @@
 @echo off
 echo ================================================
-echo JARVIS - Particle Sphere Visualization
+echo VECTOR - Particle Sphere Visualization
 echo ================================================
 echo.
 echo Starting server...
@@ -16,5 +16,6 @@ cd /d "%~dp0"
 if exist ".venv\Scripts\activate.bat" (
     call .venv\Scripts\activate.bat
 )
-python web_server.py
+python web_server.py > web_server.log 2>&1
+type web_server.log
 pause

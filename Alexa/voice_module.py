@@ -116,7 +116,7 @@ class VoiceAssistant:
         
         self.stream.start_stream()
         self.update_status("listening_for_wake_word")
-        print("Voice assistant started. Say 'Hey Jarvis' to activate.")
+        print("Voice assistant started. Say 'Hey Vector' to activate.")
         
     def stop(self):
         """Stop the voice assistant"""

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS - Particle Sphere</title>
+    <title>VECTOR - Particle Sphere</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
@@ -270,7 +270,7 @@
     <div class="status-container" id="statusContainer">
         <div class="logo">
             <div class="logo-icon">🤖</div>
-            <h1>JARVIS</h1>
+            <h1>VECTOR</h1>
         </div>
         <div class="status-text" id="statusText">Particle Sphere</div>
         <div class="status-description" id="statusDescription">Click Start to activate voice control</div>
@@ -532,7 +532,7 @@
                 },
                 'listening_for_wake_word': {
                     text: 'Listening',
-                    desc: 'Say "Hey Jarvis" to activate',
+                    desc: 'Say "Hey Vector" to activate',
                     active: true,
                     audioLevel: 0.1,
                     reactivity: 'Normal'
@@ -592,7 +592,7 @@
 
             setTimeout(() => {
                 // Show response
-                commandLabel.textContent = 'Jarvis responded';
+                commandLabel.textContent = 'Vector responded';
                 commandText.textContent = response.substring(0, 100) + (response.length > 100 ? '...' : '');
 
                 // Increase audio level for speaking
